@@ -7,6 +7,7 @@
     const today = new Date();
     const currentMonth = today.toISOString().slice(0, 7);
     const currentYear = today.getFullYear();
+    const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening';
     let expenses = [];
     let budget = 250000;
     const $ = (id) => document.getElementById(id);
@@ -34,7 +35,7 @@
         expenses = expenseResult.data || [];
         if (!profileResult.error && profileResult.data) {
             budget = Number(profileResult.data.monthly_budget) || budget;
-            const displayName = profileResult.data.display_name || user.email || 'there';
+            const displayName = profileResult.data.display_name || user.user_metadata?.full_name || user.email || 'there';
             $('user-display-name').textContent = displayName;
             $('profile-name').textContent = displayName;
             $('profile-initial').textContent = displayName.charAt(0).toUpperCase();
@@ -50,6 +51,7 @@
     }
 
     $('current-month').textContent = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    document.querySelector('.topbar h1').firstChild.textContent = `${greeting}, `;
     $('expense-date').value = today.toISOString().slice(0, 10);
 
     function notify(message) {
