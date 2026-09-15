@@ -25,9 +25,9 @@
             <form class="auth-form" id="signup-form" novalidate>
                 <div><label for="username">Email address</label><input id="username" type="email" autocomplete="email" placeholder="you@example.com" required></div>
                 <div><label for="password">Password</label><input id="password" type="password" autocomplete="new-password" minlength="6" placeholder="At least 6 characters" required></div>
-                <p class="password-note">Use at least 6 characters. Your account is stored locally on this device.</p>
+                <p class="password-note">Use at least 6 characters. Your account is securely stored in the cloud.</p>
                 <p class="auth-message" id="auth-message" role="alert"></p>
-                <button class="primary-button" type="submit">Create account <span>↗</span></button>
+                <button class="primary-button" type="submit"><span class="submit-label">Create account</span><span class="submit-arrow">↗</span></button>
             </form>
             <div class="auth-divider"><span>or</span></div>
             <button class="google-button" id="google-auth-button" type="button"><img class="google-logo" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt=""> Sign up with Google</button>
@@ -42,10 +42,20 @@
             const password = document.getElementById('password').value;
             const message = document.getElementById('auth-message');
             if (!username.includes('@') || password.length < 6) { message.textContent = 'Enter a valid email and a password with at least 6 characters.'; return; }
-            const { error } = await ledgerSupabase.auth.signUp({ email: username, password });
-            if (error) { message.textContent = error.message; return; }
-            message.textContent = 'Account created. Check your email to confirm your account, then sign in.';
-            event.target.reset();
+            const button = event.currentTarget.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.querySelector('.submit-label').textContent = 'Creating account...';
+            try {
+                const { error } = await ledgerSupabase.auth.signUp({ email: username, password });
+                if (error) { message.textContent = error.message; return; }
+                message.textContent = 'Account created. Check your email to confirm your account, then sign in.';
+                event.target.reset();
+            } catch (error) {
+                message.textContent = 'Connection failed. Check your internet connection and try again.';
+            } finally {
+                button.disabled = false;
+                button.querySelector('.submit-label').textContent = 'Create account';
+            }
         });
     </script>
     <script src="google-auth.js"></script><script src="auth-redirect.js"></script><script src="pwa.js"></script>
