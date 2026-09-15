@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create your Ledger personal finance account.">
+    <title>Create account | Ledger</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#111512">
+</head>
+<body class="auth-body" data-google-client-id="171352585547-2rnltfiha2a1rkdi4ulcatn2g234gni4.apps.googleusercontent.com">
+    <main class="auth-layout">
+        <section class="auth-intro">
+            <a class="brand" href="login.html"><span class="brand-mark">L</span><span><strong>ledger</strong><small>personal finance</small></span></a>
+            <div><h1>A calmer way to spend.</h1><p>Start with one account for your expenses, your budget, and a better view of where your money goes.</p></div>
+            <div class="auth-intro-footer"><span>+</span> Built for everyday clarity.</div>
+        </section>
+        <section class="auth-card" aria-labelledby="signup-title">
+            <a class="back-home" href="index.html">← Back to Ledger home</a>
+            <p class="eyebrow">Start fresh</p>
+            <h2 id="signup-title">Create your account</h2>
+            <p class="muted">Your expense dashboard is one step away.</p>
+            <form class="auth-form" id="signup-form" novalidate>
+                <div><label for="username">Email address</label><input id="username" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+                <div><label for="password">Password</label><input id="password" type="password" autocomplete="new-password" minlength="6" placeholder="At least 6 characters" required></div>
+                <p class="password-note">Use at least 6 characters. Your account is stored locally on this device.</p>
+                <p class="auth-message" id="auth-message" role="alert"></p>
+                <button class="primary-button" type="submit">Create account <span>↗</span></button>
+            </form>
+            <div class="auth-divider"><span>or</span></div>
+            <button class="google-button" id="google-auth-button" type="button"><img class="google-logo" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt=""> Sign up with Google</button>
+            <p class="auth-switch">Already have an account? <a href="login.html">Sign in</a></p>
+        </section>
+    </main>
+    <script src="supabase-config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js"></script>
+    <script>
+        document.getElementById('signup-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const message = document.getElementById('auth-message');
+            if (!username.includes('@') || password.length < 6) { message.textContent = 'Enter a valid email and a password with at least 6 characters.'; return; }
+            const { error } = await ledgerSupabase.auth.signUp({ email: username, password });
+            if (error) { message.textContent = error.message; return; }
+            message.textContent = 'Account created. Check your email to confirm your account, then sign in.';
+            event.target.reset();
+        });
+    </script>
+    <script src="google-auth.js"></script><script src="pwa.js"></script>
+</body>
+</html>
