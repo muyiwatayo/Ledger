@@ -16,6 +16,7 @@
     const total = (items) => items.reduce((sum, item) => sum + Number(item.amount), 0);
     const formatDate = (value) => new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
     const escapeHtml = (value) => value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+    const firstName = (displayName) => displayName.includes('@') ? displayName.split('@')[0] : displayName.trim().split(/\s+/)[0];
     const setProfilePhoto = (displayName) => {
         if (!user.user_metadata?.avatar_url) return;
         const avatar = document.createElement('img');
@@ -36,14 +37,14 @@
         if (!profileResult.error && profileResult.data) {
             budget = Number(profileResult.data.monthly_budget) || budget;
             const displayName = profileResult.data.display_name || user.user_metadata?.full_name || user.email || 'there';
-            $('user-display-name').textContent = displayName;
+            $('user-display-name').textContent = firstName(displayName);
             $('profile-name').textContent = displayName;
             $('profile-initial').textContent = displayName.charAt(0).toUpperCase();
             setProfilePhoto(displayName);
             $('user-joined-date').textContent = new Date(profileResult.data.created_at).toLocaleDateString();
         } else {
             const displayName = user.user_metadata?.full_name || user.email || 'there';
-            $('user-display-name').textContent = displayName;
+            $('user-display-name').textContent = firstName(displayName);
             $('profile-name').textContent = displayName;
             $('profile-initial').textContent = displayName.charAt(0).toUpperCase();
             setProfilePhoto(displayName);
@@ -101,7 +102,9 @@
     $('clear-btn').addEventListener('click', async () => { if (!expenses.length || !confirm('Clear every transaction from this account?')) return; const { error } = await ledgerSupabase.from('expenses').delete().eq('user_id', user.id); if (error) { notify(error.message); return; } expenses = []; render(); notify('All transactions cleared.'); });
     $('edit-budget-btn').addEventListener('click', async () => { const value = Number(prompt('Set your monthly budget in Naira:', budget)); if (!value || value <= 0) { notify('Enter a budget greater than zero.'); return; } budget = value; try { await saveBudget(); render(); notify('Monthly budget updated.'); } catch (error) { notify(error.message); } });
     $('export-btn').addEventListener('click', () => { if (!expenses.length) { notify('Add an expense before exporting.'); return; } const rows = [['Description', 'Category', 'Date', 'Amount'], ...expenses.map((item) => [item.description, item.category, item.expense_date, item.amount])]; const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n'); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); link.download = `ledger-${currentMonth}.csv`; link.click(); URL.revokeObjectURL(link.href); notify('CSV export downloaded.'); });
-    $('logout-btn').addEventListener('click', async () => { await ledgerSupabase.auth.signOut(); window.location.href = 'login.html'; });
+    const logout = async () => { await ledgerSupabase.auth.signOut(); window.location.href = 'login.html'; };
+    $('logout-btn').addEventListener('click', logout);
+    $('logout-top').addEventListener('click', logout);
 
     try { await loadData(); render(); } catch (error) { $('form-message').textContent = `Could not load your cloud data: ${error.message}`; }
 })();
