@@ -13,7 +13,7 @@
     let expenses = [];
     let budget = 250000;
     const $ = (id) => document.getElementById(id);
-    const money = (value) => `₦${Number(value).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
+    const money = (value) => `${Number(value) < 0 ? '-' : ''}₦${Math.abs(Number(value)).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
     const monthExpenses = () => expenses.filter((item) => item.expense_date.slice(0, 7) === currentMonth);
     const total = (items) => items.reduce((sum, item) => sum + Number(item.amount), 0);
     const formatDate = (value) => new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -124,7 +124,7 @@
             }
 
     function render() {
-        const monthTotal = total(monthExpenses()); const remaining = budget - monthTotal; const budgetPercent = budget > 0 ? monthTotal / budget * 100 : 0; $('total-spent').textContent = money(monthTotal); $('budget-total').textContent = money(budget); $('remaining-budget').textContent = money(Math.max(remaining, 0)); $('transaction-count').textContent = expenses.length;
+        const monthTotal = total(monthExpenses()); const remaining = budget - monthTotal; const budgetPercent = budget > 0 ? monthTotal / budget * 100 : 0; $('total-spent').textContent = money(monthTotal); $('budget-total').textContent = money(budget); $('remaining-budget').textContent = money(remaining); $('transaction-count').textContent = expenses.length;
         $('spend-change').textContent = monthTotal ? `${Math.round(monthTotal / budget * 100)}% of your budget used` : 'No expenses yet'; $('budget-status').textContent = remaining < 0 ? `${money(Math.abs(remaining))} over budget` : remaining < budget * .2 ? 'Budget is getting tight' : "You're on track";
         const meter = $('budget-meter'); const fill = $('budget-meter-fill'); const usage = Math.min(Math.max(budgetPercent, 0), 100); fill.style.width = `${usage}%`; fill.classList.toggle('is-over-budget', remaining < 0); meter.setAttribute('aria-valuenow', String(Math.round(usage))); $('budget-used').textContent = `${Math.round(budgetPercent)}%`;
         const latest = expenses[0]; $('latest-date').textContent = latest ? `Last added ${formatDate(latest.expense_date)}` : 'Start your first entry'; const period = $('chart-period').value; const chartItems = period === 'all' ? expenses : period === 'year' ? expenses.filter((item) => item.expense_date.slice(0, 4) === String(currentYear)) : monthExpenses();
