@@ -12,6 +12,7 @@
     const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening';
     let expenses = [];
     let budget = 250000;
+    let editingExpenseId = null;
     const $ = (id) => document.getElementById(id);
     const money = (value) => `${Number(value) < 0 ? '-' : ''}₦${Math.abs(Number(value)).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
     const monthExpenses = () => expenses.filter((item) => item.expense_date.slice(0, 7) === currentMonth);
@@ -66,6 +67,16 @@
         if (error) throw error;
     }
 
+    function resetExpenseForm() {
+        editingExpenseId = null;
+        $('expense-form').reset();
+        $('expense-date').value = dateKey(today);
+        $('expense-form-title').textContent = 'Record an expense';
+        $('expense-submit-btn').innerHTML = 'Add expense <span>↗</span>';
+        $('cancel-edit-btn').hidden = true;
+        $('form-message').textContent = '';
+    }
+
     function drawChart(items) {
         const canvas = $('expenseChart'); const context = canvas.getContext('2d'); const size = Math.min(canvas.parentElement.clientWidth || 260, 225); const ratio = window.devicePixelRatio || 1;
         canvas.width = size * ratio; canvas.height = size * ratio; context.scale(ratio, ratio); context.clearRect(0, 0, size, size);
@@ -79,7 +90,7 @@
     function renderTable() {
         const query = $('search-input').value.trim().toLowerCase(); const filter = $('category-filter').value;
         const visible = expenses.filter((item) => item.description.toLowerCase().includes(query) && (filter === 'All' || item.category === filter));
-        $('transaction-list').innerHTML = visible.map((item) => `<tr><td>${escapeHtml(item.description)}</td><td><span class="category-tag">${escapeHtml(item.category)}</span></td><td>${formatDate(item.expense_date)}</td><td>${money(item.amount)}</td><td><button class="delete-button" type="button" data-id="${item.id}" aria-label="Delete ${escapeHtml(item.description)}">×</button></td></tr>`).join('');
+        $('transaction-list').innerHTML = visible.map((item) => `<tr><td>${escapeHtml(item.description)}</td><td><span class="category-tag">${escapeHtml(item.category)}</span></td><td>${formatDate(item.expense_date)}</td><td>${money(item.amount)}</td><td><div class="transaction-actions"><button class="row-action edit-button" type="button" data-action="edit" data-id="${item.id}" aria-label="Edit ${escapeHtml(item.description)}">Edit</button><button class="row-action delete-button" type="button" data-action="delete" data-id="${item.id}" aria-label="Delete ${escapeHtml(item.description)}">×</button></div></td></tr>`).join('');
         $('empty-state').hidden = visible.length > 0; $('transaction-summary').textContent = `Showing ${visible.length} of ${expenses.length} transaction${expenses.length === 1 ? '' : 's'}`;
     }
 
@@ -134,13 +145,44 @@
     $('expense-form').addEventListener('submit', async (event) => {
         event.preventDefault(); const description = $('description').value.trim(); const amount = Number($('amount').value); const expenseDate = $('expense-date').value; $('form-message').textContent = '';
         if (!description || !amount || amount <= 0 || !expenseDate) { $('form-message').textContent = 'Add a description, date, and amount greater than zero.'; return; }
-        const expense = { user_id: user.id, description, amount, category: $('category').value, expense_date: expenseDate };
+        const expense = { description, amount, category: $('category').value, expense_date: expenseDate };
+        if (editingExpenseId) {
+            const { data, error } = await ledgerSupabase.from('expenses').update(expense).eq('id', editingExpenseId).eq('user_id', user.id).select().single();
+            if (error) { $('form-message').textContent = error.message; return; }
+            expenses = expenses.map((item) => item.id === editingExpenseId ? data : item);
+            resetExpenseForm(); render(); notify('Expense updated.'); return;
+        }
+        expense.user_id = user.id;
         const { data, error } = await ledgerSupabase.from('expenses').insert(expense).select().single();
         if (error) { $('form-message').textContent = error.message; return; }
-        expenses.unshift(data); event.target.reset(); $('expense-date').value = dateKey(today); render(); notify('Expense added to your ledger.');
+        expenses.unshift(data); resetExpenseForm(); render(); notify('Expense added to your ledger.');
     });
 
-    $('transaction-list').addEventListener('click', async (event) => { const button = event.target.closest('[data-id]'); if (!button) return; const { error } = await ledgerSupabase.from('expenses').delete().eq('id', button.dataset.id).eq('user_id', user.id); if (error) { notify(error.message); return; } expenses = expenses.filter((item) => item.id !== button.dataset.id); render(); notify('Transaction removed.'); });
+    $('transaction-list').addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-id]');
+        if (!button) return;
+        if (button.dataset.action === 'edit') {
+            const expense = expenses.find((item) => item.id === button.dataset.id);
+            if (!expense) return;
+            editingExpenseId = expense.id;
+            $('description').value = expense.description;
+            $('amount').value = expense.amount;
+            $('category').value = expense.category;
+            $('expense-date').value = expense.expense_date;
+            $('expense-form-title').textContent = 'Edit expense';
+            $('expense-submit-btn').textContent = 'Save changes';
+            $('cancel-edit-btn').hidden = false;
+            $('form-message').textContent = '';
+            $('expense-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            $('description').focus({ preventScroll: true });
+            return;
+        }
+        const { error } = await ledgerSupabase.from('expenses').delete().eq('id', button.dataset.id).eq('user_id', user.id);
+        if (error) { notify(error.message); return; }
+        if (editingExpenseId === button.dataset.id) resetExpenseForm();
+        expenses = expenses.filter((item) => item.id !== button.dataset.id); render(); notify('Transaction removed.');
+    });
+    $('cancel-edit-btn').addEventListener('click', resetExpenseForm);
     $('search-input').addEventListener('input', renderTable); $('category-filter').addEventListener('change', renderTable); $('chart-period').addEventListener('change', render); window.addEventListener('resize', render);
     $('clear-btn').addEventListener('click', async () => { if (!expenses.length || !confirm('Clear every transaction from this account?')) return; const { error } = await ledgerSupabase.from('expenses').delete().eq('user_id', user.id); if (error) { notify(error.message); return; } expenses = []; render(); notify('All transactions cleared.'); });
     $('edit-budget-btn').addEventListener('click', async () => { const value = Number(prompt('Set your monthly budget in Naira:', budget)); if (!value || value <= 0) { notify('Enter a budget greater than zero.'); return; } budget = value; try { await saveBudget(); render(); notify('Monthly budget updated.'); } catch (error) { notify(error.message); } });
