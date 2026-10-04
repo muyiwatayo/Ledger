@@ -15,7 +15,7 @@
         <section class="auth-intro">
             <a class="brand" href="login.html"><span class="brand-mark">L</span><span><strong>ledger</strong><small>personal finance</small></span></a>
             <div><h1>Make every naira count.</h1><p>A clear place for your daily spending, monthly budget, and the small decisions that add up.</p></div>
-            <div class="auth-intro-footer"><span>◒</span> Your money, made visible.</div>
+            <div class="auth-intro-footer"><span>◒</span> Created by Martins Odeshina</div>
         </section>
         <section class="auth-card" aria-labelledby="login-title">
             <a class="back-home" href="index.html">← Back to Ledger home</a>
@@ -28,6 +28,7 @@
                 <p class="auth-message" id="auth-message" role="alert"></p>
                 <button class="primary-button" type="submit"><span class="submit-label">Sign in</span><span class="submit-arrow">↗</span></button>
             </form>
+                        <button class="email-login-button" id="email-login-button" type="button">Email me a sign-in link</button>
             <div class="auth-divider"><span>or</span></div>
             <button class="google-button" id="google-auth-button" type="button"><img class="google-logo" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt=""> Continue with Google</button>
             <p class="auth-switch">New to Ledger? <a href="signup.html">Create an account</a></p>
@@ -53,6 +54,25 @@
             } finally {
                 button.disabled = false;
                 button.querySelector('.submit-label').textContent = 'Sign in';
+            }
+        });
+    </script>
+    <script>
+        document.getElementById('email-login-button').addEventListener('click', async (event) => {
+            const email = document.getElementById('username').value.trim();
+            const message = document.getElementById('auth-message');
+            const button = event.currentTarget;
+            if (!email) { message.textContent = 'Enter your email address to receive a sign-in link.'; return; }
+            button.disabled = true;
+            button.textContent = 'Sending sign-in link...';
+            try {
+                const { error } = await ledgerSupabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: new URL('dashboard.html', window.location.href).href } });
+                message.textContent = error ? error.message : 'Check your inbox for a secure sign-in link.';
+            } catch (error) {
+                message.textContent = 'Connection failed. Check your internet connection and try again.';
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Email me a sign-in link';
             }
         });
     </script>

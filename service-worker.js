@@ -1,4 +1,4 @@
-const cacheName = 'ledger-shell-v7';
+const cacheName = 'ledger-shell-v8';
 const appFiles = [
     './',
     './index.html',

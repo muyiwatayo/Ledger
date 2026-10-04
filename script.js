@@ -5,7 +5,9 @@
     const categories = ['Food', 'Bills', 'Transport', 'Shopping', 'Fun', 'Other'];
     const colors = ['#49b66a', '#1d6838', '#98d7a7', '#27553a', '#b4dfbd', '#8b9a8d'];
     const today = new Date();
-    const currentMonth = today.toISOString().slice(0, 7);
+    const monthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const dateKey = (date) => `${monthKey(date)}-${String(date.getDate()).padStart(2, '0')}`;
+    const currentMonth = monthKey(today);
     const currentYear = today.getFullYear();
     const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening';
     let expenses = [];
@@ -53,7 +55,7 @@
 
     $('current-month').textContent = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     document.querySelector('.topbar h1').firstChild.textContent = `${greeting}, `;
-    $('expense-date').value = today.toISOString().slice(0, 10);
+    $('expense-date').value = dateKey(today);
 
     function notify(message) {
         const toast = $('toast'); toast.textContent = message; toast.classList.add('is-visible'); clearTimeout(notify.timer); notify.timer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
@@ -81,11 +83,52 @@
         $('empty-state').hidden = visible.length > 0; $('transaction-summary').textContent = `Showing ${visible.length} of ${expenses.length} transaction${expenses.length === 1 ? '' : 's'}`;
     }
 
+    function renderTrend() {
+                const chart = $('monthly-trend');
+                const currentCutoff = dateKey(today);
+                const months = Array.from({ length: 6 }, (_, index) => new Date(today.getFullYear(), today.getMonth() - 5 + index, 1));
+                const values = months.map((date) => {
+                    const key = monthKey(date);
+                    return total(expenses.filter((item) => item.expense_date.slice(0, 7) === key && (key !== currentMonth || item.expense_date <= currentCutoff)));
+                });
+                const maxValue = Math.max(...values, 1);
+                chart.replaceChildren();
+                chart.setAttribute('aria-label', `Spending for the last six months: ${months.map((date, index) => `${date.toLocaleDateString(undefined, { month: 'long' })}, ${money(values[index])}`).join('; ')}`);
+
+                months.forEach((date, index) => {
+                    const column = document.createElement('div');
+                    column.className = 'trend-column';
+                    const bar = document.createElement('span');
+                    bar.className = `trend-bar${index === months.length - 1 ? ' is-current' : ''}`;
+                    bar.style.setProperty('--bar-height', `${Math.max(values[index] / maxValue * 100, 2)}%`);
+                    bar.title = `${date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}: ${money(values[index])}`;
+                    const label = document.createElement('span');
+                    label.className = 'trend-month';
+                    label.textContent = date.toLocaleDateString(undefined, { month: 'short' });
+                    column.append(bar, label);
+                    chart.appendChild(column);
+                });
+
+                const previousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const previousKey = monthKey(previousMonth);
+                const previousLastDay = new Date(previousMonth.getFullYear(), previousMonth.getMonth() + 1, 0).getDate();
+                const previousCutoff = dateKey(new Date(previousMonth.getFullYear(), previousMonth.getMonth(), Math.min(today.getDate(), previousLastDay)));
+                const currentToDate = total(expenses.filter((item) => item.expense_date.slice(0, 7) === currentMonth && item.expense_date <= currentCutoff));
+                const previousToDate = total(expenses.filter((item) => item.expense_date.slice(0, 7) === previousKey && item.expense_date <= previousCutoff));
+                if (!previousToDate) {
+                    $('trend-summary').textContent = currentToDate ? `You've logged ${money(currentToDate)} so far; there was no spending by this date last month.` : 'No spending in the comparable period last month. Your trend updates as you add expenses.';
+                    return;
+                }
+                const difference = Math.round((currentToDate - previousToDate) / previousToDate * 100);
+                $('trend-summary').textContent = difference === 0 ? 'Spending is level with this point last month.' : `You're spending ${Math.abs(difference)}% ${difference < 0 ? 'less' : 'more'} than at this point last month.`;
+            }
+
     function render() {
-        const monthTotal = total(monthExpenses()); const remaining = budget - monthTotal; $('total-spent').textContent = money(monthTotal); $('budget-total').textContent = money(budget); $('remaining-budget').textContent = money(Math.max(remaining, 0)); $('transaction-count').textContent = expenses.length;
+        const monthTotal = total(monthExpenses()); const remaining = budget - monthTotal; const budgetPercent = budget > 0 ? monthTotal / budget * 100 : 0; $('total-spent').textContent = money(monthTotal); $('budget-total').textContent = money(budget); $('remaining-budget').textContent = money(Math.max(remaining, 0)); $('transaction-count').textContent = expenses.length;
         $('spend-change').textContent = monthTotal ? `${Math.round(monthTotal / budget * 100)}% of your budget used` : 'No expenses yet'; $('budget-status').textContent = remaining < 0 ? `${money(Math.abs(remaining))} over budget` : remaining < budget * .2 ? 'Budget is getting tight' : "You're on track";
+        const meter = $('budget-meter'); const fill = $('budget-meter-fill'); const usage = Math.min(Math.max(budgetPercent, 0), 100); fill.style.width = `${usage}%`; fill.classList.toggle('is-over-budget', remaining < 0); meter.setAttribute('aria-valuenow', String(Math.round(usage))); $('budget-used').textContent = `${Math.round(budgetPercent)}%`;
         const latest = expenses[0]; $('latest-date').textContent = latest ? `Last added ${formatDate(latest.expense_date)}` : 'Start your first entry'; const period = $('chart-period').value; const chartItems = period === 'all' ? expenses : period === 'year' ? expenses.filter((item) => item.expense_date.slice(0, 4) === String(currentYear)) : monthExpenses();
-        renderTable(); drawChart(chartItems);
+        renderTable(); drawChart(chartItems); renderTrend();
     }
 
     $('expense-form').addEventListener('submit', async (event) => {
@@ -94,7 +137,7 @@
         const expense = { user_id: user.id, description, amount, category: $('category').value, expense_date: expenseDate };
         const { data, error } = await ledgerSupabase.from('expenses').insert(expense).select().single();
         if (error) { $('form-message').textContent = error.message; return; }
-        expenses.unshift(data); event.target.reset(); $('expense-date').value = today.toISOString().slice(0, 10); render(); notify('Expense added to your ledger.');
+        expenses.unshift(data); event.target.reset(); $('expense-date').value = dateKey(today); render(); notify('Expense added to your ledger.');
     });
 
     $('transaction-list').addEventListener('click', async (event) => { const button = event.target.closest('[data-id]'); if (!button) return; const { error } = await ledgerSupabase.from('expenses').delete().eq('id', button.dataset.id).eq('user_id', user.id); if (error) { notify(error.message); return; } expenses = expenses.filter((item) => item.id !== button.dataset.id); render(); notify('Transaction removed.'); });
