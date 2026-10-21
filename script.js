@@ -7,10 +7,18 @@
     const today = new Date();
     const monthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const dateKey = (date) => `${monthKey(date)}-${String(date.getDate()).padStart(2, '0')}`;
+    const advanceRecurringDate = (value, frequency, dueDay) => {
+        const [year, month, day] = value.split('-').map(Number);
+        if (frequency === 'weekly') return dateKey(new Date(year, month - 1, day + 7));
+        const nextMonth = new Date(year, month, 1);
+        const lastDay = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate();
+        return dateKey(new Date(nextMonth.getFullYear(), nextMonth.getMonth(), Math.min(dueDay, lastDay)));
+    };
     const currentMonth = monthKey(today);
     const currentYear = today.getFullYear();
     const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening';
     let expenses = [];
+    let recurringExpenses = [];
     let budget = 250000;
     let editingExpenseId = null;
     const $ = (id) => document.getElementById(id);
@@ -31,12 +39,15 @@
     };
 
     async function loadData() {
-        const [profileResult, expenseResult] = await Promise.all([
+        const [profileResult, expenseResult, recurringResult] = await Promise.all([
             ledgerSupabase.from('profiles').select('display_name, monthly_budget, created_at').eq('id', user.id).single(),
-            ledgerSupabase.from('expenses').select('id, description, amount, category, expense_date, created_at').eq('user_id', user.id).order('expense_date', { ascending: false })
+            ledgerSupabase.from('expenses').select('id, description, amount, category, expense_date, created_at').eq('user_id', user.id).order('expense_date', { ascending: false }),
+            ledgerSupabase.from('recurring_expenses').select('id, description, amount, category, frequency, due_day, next_due_date').eq('user_id', user.id).order('next_due_date')
         ]);
         if (expenseResult.error) throw expenseResult.error;
+        if (recurringResult.error) throw recurringResult.error;
         expenses = expenseResult.data || [];
+        recurringExpenses = recurringResult.data || [];
         if (!profileResult.error && profileResult.data) {
             budget = Number(profileResult.data.monthly_budget) || budget;
             const displayName = profileResult.data.display_name || user.user_metadata?.full_name || user.email || 'there';
@@ -57,6 +68,7 @@
     $('current-month').textContent = today.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     document.querySelector('.topbar h1').firstChild.textContent = `${greeting}, `;
     $('expense-date').value = dateKey(today);
+    $('recurring-date').value = dateKey(today);
 
     function notify(message) {
         const toast = $('toast'); toast.textContent = message; toast.classList.add('is-visible'); clearTimeout(notify.timer); notify.timer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
@@ -92,6 +104,24 @@
         const visible = expenses.filter((item) => item.description.toLowerCase().includes(query) && (filter === 'All' || item.category === filter));
         $('transaction-list').innerHTML = visible.map((item) => `<tr><td>${escapeHtml(item.description)}</td><td><span class="category-tag">${escapeHtml(item.category)}</span></td><td>${formatDate(item.expense_date)}</td><td>${money(item.amount)}</td><td><div class="transaction-actions"><button class="row-action edit-button" type="button" data-action="edit" data-id="${item.id}" aria-label="Edit ${escapeHtml(item.description)}">Edit</button><button class="row-action delete-button" type="button" data-action="delete" data-id="${item.id}" aria-label="Delete ${escapeHtml(item.description)}">×</button></div></td></tr>`).join('');
         $('empty-state').hidden = visible.length > 0; $('transaction-summary').textContent = `Showing ${visible.length} of ${expenses.length} transaction${expenses.length === 1 ? '' : 's'}`;
+    }
+
+    function renderRecurring() {
+        const list = $('recurring-list');
+        const sorted = [...recurringExpenses].sort((first, second) => first.next_due_date.localeCompare(second.next_due_date));
+        if (!sorted.length) {
+            list.innerHTML = '<p class="recurring-empty">No reminders yet. Add a regular bill above to keep it in view.</p>';
+            return;
+        }
+
+        list.innerHTML = sorted.map((item) => {
+            const due = item.next_due_date <= dateKey(today);
+            const dueLabel = due
+                ? item.next_due_date < dateKey(today) ? 'Overdue' : 'Due today'
+                : `Next due ${formatDate(item.next_due_date)}`;
+            const repeatLabel = item.frequency === 'weekly' ? 'Every week' : 'Every month';
+            return `<div class="recurring-item"><div class="recurring-details"><strong>${escapeHtml(item.description)}</strong><span>${escapeHtml(item.category)} · ${repeatLabel} · ${dueLabel}</span></div><strong class="recurring-amount">${money(item.amount)}</strong><div class="recurring-actions"><button class="row-action recurring-record" type="button" data-recurring-action="record" data-id="${item.id}" aria-label="Record recurring expense ${escapeHtml(item.description)}" ${due ? '' : 'disabled'}>Record expense</button><button class="row-action delete-button" type="button" data-recurring-action="delete" data-id="${item.id}" aria-label="Remove ${escapeHtml(item.description)} reminder">Remove</button></div></div>`;
+        }).join('');
     }
 
     function renderTrend() {
@@ -137,9 +167,24 @@
     function render() {
         const monthTotal = total(monthExpenses()); const remaining = budget - monthTotal; const budgetPercent = budget > 0 ? monthTotal / budget * 100 : 0; $('total-spent').textContent = money(monthTotal); $('budget-total').textContent = money(budget); $('remaining-budget').textContent = money(remaining); $('transaction-count').textContent = expenses.length;
         $('spend-change').textContent = monthTotal ? `${Math.round(monthTotal / budget * 100)}% of your budget used` : 'No expenses yet'; $('budget-status').textContent = remaining < 0 ? `${money(Math.abs(remaining))} over budget` : remaining < budget * .2 ? 'Budget is getting tight' : "You're on track";
-        const meter = $('budget-meter'); const fill = $('budget-meter-fill'); const usage = Math.min(Math.max(budgetPercent, 0), 100); fill.style.width = `${usage}%`; fill.classList.toggle('is-over-budget', remaining < 0); meter.setAttribute('aria-valuenow', String(Math.round(usage))); $('budget-used').textContent = `${Math.round(budgetPercent)}%`;
-        const latest = expenses[0]; $('latest-date').textContent = latest ? `Last added ${formatDate(latest.expense_date)}` : 'Start your first entry'; const period = $('chart-period').value; const chartItems = period === 'all' ? expenses : period === 'year' ? expenses.filter((item) => item.expense_date.slice(0, 4) === String(currentYear)) : monthExpenses();
-        renderTable(); drawChart(chartItems); renderTrend();
+        const meter = $('budget-meter'); const fill = $('budget-meter-fill'); const usage = Math.min(Math.max(budgetPercent, 0), 100);
+        if (fill) {
+            fill.style.width = `${usage}%`;
+            fill.classList.toggle('is-over-budget', remaining < 0);
+        }
+        if (meter) meter.setAttribute('aria-valuenow', String(Math.round(usage)));
+        const budgetUsed = $('budget-used');
+        if (budgetUsed) budgetUsed.textContent = `${Math.round(budgetPercent)}%`;
+        const latest = expenses[0]; $('latest-date').textContent = latest ? `Last added ${formatDate(latest.expense_date)}` : 'Start your first entry';
+
+        let period = $('chart-period').value;
+        let chartItems = period === 'all' ? expenses : period === 'year' ? expenses.filter((item) => item.expense_date.slice(0, 4) === String(currentYear)) : monthExpenses();
+        if (period === 'month' && !chartItems.length && expenses.length) {
+            $('chart-period').value = 'all';
+            chartItems = expenses;
+        }
+
+        renderTable(); drawChart(chartItems); renderTrend(); renderRecurring();
     }
 
     $('expense-form').addEventListener('submit', async (event) => {
@@ -156,6 +201,84 @@
         const { data, error } = await ledgerSupabase.from('expenses').insert(expense).select().single();
         if (error) { $('form-message').textContent = error.message; return; }
         expenses.unshift(data); resetExpenseForm(); render(); notify('Expense added to your ledger.');
+    });
+
+    $('recurring-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const description = $('recurring-description').value.trim();
+        const amount = Number($('recurring-amount').value);
+        const nextDueDate = $('recurring-date').value;
+        const message = $('recurring-message');
+        const button = event.currentTarget.querySelector('button[type="submit"]');
+        message.textContent = '';
+        if (!description || !amount || amount <= 0 || !nextDueDate) {
+            message.textContent = 'Enter a description, a due date, and an amount greater than zero.';
+            return;
+        }
+
+        button.disabled = true;
+        try {
+            const { data, error } = await ledgerSupabase.from('recurring_expenses').insert({
+                user_id: user.id,
+                description,
+                amount,
+                category: $('recurring-category').value,
+                frequency: $('recurring-frequency').value,
+                due_day: Number(nextDueDate.slice(-2)),
+                next_due_date: nextDueDate
+            }).select('id, description, amount, category, frequency, due_day, next_due_date').single();
+            if (error) throw error;
+            recurringExpenses.push(data);
+            event.currentTarget.reset();
+            $('recurring-date').value = dateKey(today);
+            renderRecurring();
+            notify('Recurring reminder added.');
+        } catch (error) {
+            message.textContent = `Could not save the reminder: ${error.message}`;
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    $('recurring-list').addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-recurring-action]');
+        if (!button) return;
+        const recurring = recurringExpenses.find((item) => item.id === button.dataset.id);
+        if (!recurring) return;
+        button.disabled = true;
+
+        try {
+            if (button.dataset.recurringAction === 'record') {
+                if (recurring.next_due_date > dateKey(today)) return;
+                const { data: expenseId, error } = await ledgerSupabase.rpc('record_recurring_expense', {
+                    p_recurring_expense_id: recurring.id
+                });
+                if (error) throw error;
+                expenses.unshift({
+                    id: expenseId,
+                    description: recurring.description,
+                    amount: recurring.amount,
+                    category: recurring.category,
+                    expense_date: recurring.next_due_date,
+                    created_at: new Date().toISOString()
+                });
+                expenses.sort((first, second) => second.expense_date.localeCompare(first.expense_date));
+                recurring.next_due_date = advanceRecurringDate(recurring.next_due_date, recurring.frequency, recurring.due_day);
+                render();
+                notify('Expense recorded and next reminder scheduled.');
+            } else if (button.dataset.recurringAction === 'delete') {
+                if (!confirm(`Remove the recurring reminder for "${recurring.description}"?`)) return;
+                const { error } = await ledgerSupabase.from('recurring_expenses').delete().eq('id', recurring.id).eq('user_id', user.id);
+                if (error) throw error;
+                recurringExpenses = recurringExpenses.filter((item) => item.id !== recurring.id);
+                renderRecurring();
+                notify('Recurring reminder removed.');
+            }
+        } catch (error) {
+            notify(`Could not update the recurring expense: ${error.message}`);
+        } finally {
+            button.disabled = false;
+        }
     });
 
     $('transaction-list').addEventListener('click', async (event) => {
