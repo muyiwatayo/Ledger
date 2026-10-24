@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sign in to your Ledger personal finance dashboard.">
     <title>Sign in | Ledger</title>
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111512">
 </head>
-<body class="auth-body" data-google-client-id="171352585547-2rnltfiha2a1rkdi4ulcatn2g234gni4.apps.googleusercontent.com">
+<body class="auth-body">
     <main class="auth-layout">
         <section class="auth-intro">
             <a class="brand" href="login.html"><span class="brand-mark">L</span><span><strong>ledger</strong><small>personal finance</small></span></a>
@@ -18,7 +19,7 @@
             <div class="auth-intro-footer"><span>◒</span> Created by Martins Odeshina</div>
         </section>
         <section class="auth-card" aria-labelledby="login-title">
-            <a class="back-home" href="index.html">← Back to Ledger home</a>
+            <div class="auth-card-top"><a class="back-home" href="index.html">← Back to Ledger home</a><button class="small-button theme-toggle" data-theme-toggle type="button" aria-label="Switch to dark mode" title="Switch to dark mode">☾</button></div>
             <p class="eyebrow">Welcome back</p>
             <h2 id="login-title">Sign in to Ledger</h2>
             <p class="muted">Pick up where you left off.</p>
@@ -42,7 +43,7 @@
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const message = document.getElementById('auth-message');
-            if (!username || !password) { message.textContent = 'Enter your email address and password.'; return; }
+            if (!document.getElementById('username').checkValidity() || !password) { message.textContent = 'Enter a valid email address and your password.'; return; }
             button.disabled = true;
             button.querySelector('.submit-label').textContent = 'Signing in...';
             try {

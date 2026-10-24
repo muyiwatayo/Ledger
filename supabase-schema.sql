@@ -2,8 +2,12 @@ create table if not exists public.profiles (
     id uuid primary key references auth.users(id) on delete cascade,
     display_name text,
     monthly_budget numeric(12, 2) not null default 250000,
+    category_budgets jsonb not null default '{}'::jsonb,
     created_at timestamptz not null default now()
 );
+
+alter table public.profiles
+    add column if not exists category_budgets jsonb not null default '{}'::jsonb;
 
 create table if not exists public.expenses (
     id uuid primary key default gen_random_uuid(),
@@ -28,6 +32,16 @@ create table if not exists public.recurring_expenses (
     next_due_date date not null,
     created_at timestamptz not null default now()
 );
+
+alter table public.recurring_expenses
+    add column if not exists due_day smallint check (due_day between 1 and 31);
+
+update public.recurring_expenses
+set due_day = extract(day from next_due_date)::smallint
+where due_day is null;
+
+alter table public.recurring_expenses
+    alter column due_day set not null;
 
 create index if not exists recurring_expenses_user_due_idx on public.recurring_expenses (user_id, next_due_date);
 

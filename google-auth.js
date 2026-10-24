@@ -6,13 +6,22 @@
     button.addEventListener('click', async () => {
         button.disabled = true;
         message.textContent = '';
-        const { error } = await ledgerSupabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo: `${window.location.origin}/dashboard.html` }
-        });
-        if (error) {
+        if (window.location.protocol === 'file:') {
             button.disabled = false;
-            message.textContent = error.message;
+            message.textContent = 'Google sign-in does not work from a file opened on your computer. Open Ledger through localhost or its deployed website, then try again.';
+            return;
+        }
+
+        try {
+            const redirectTo = new URL('dashboard.html', window.location.href).href;
+            const { error } = await ledgerSupabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo }
+            });
+            if (error) throw error;
+        } catch (error) {
+            button.disabled = false;
+            message.textContent = error.message || 'Could not start Google sign-in. Check your connection and Supabase Google provider settings.';
         }
     });
 })();

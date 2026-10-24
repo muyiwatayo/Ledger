@@ -1,4 +1,4 @@
-const cacheName = 'ledger-shell-v10';
+const cacheName = 'ledger-shell-v15';
 const appFiles = [
     './',
     './index.html',
@@ -6,6 +6,7 @@ const appFiles = [
     './login.html',
     './signup.html',
     './style.css',
+    './theme.js',
     './script.js',
     './database.js',
     './supabase-config.js',

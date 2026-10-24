@@ -3,50 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Track daily expenses, keep an eye on your budget, and spot spending patterns with Ledger.">
+    <meta name="description" content="Track everyday spending, set monthly and category budgets, and keep recurring bills in view with Ledger.">
     <title>Ledger | A clearer view of your spending</title>
-    <link rel="stylesheet" href="style.css">
+    <meta property="og:title" content="Ledger | A clearer view of your spending">
+    <meta property="og:description" content="Track everyday spending, set budgets, and understand your money with Ledger.">
+    <meta property="og:type" content="website">
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="style.css?v=14">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#111512">
+    <meta name="theme-color" content="#f2f7f2">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body class="landing-body">
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="landing-nav">
         <a class="brand" href="index.html" aria-label="Ledger home"><span class="brand-mark">L</span><span><strong>ledger</strong><small>personal finance</small></span></a>
         <nav class="landing-links" aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#principles">Why Ledger</a><a href="login.html">Sign in</a></nav>
-        <div class="landing-actions"><button class="small-button install-button" data-install-app type="button" hidden>Install app</button><a class="small-button" href="signup.html">Get started <span>↗</span></a></div>
+        <div class="landing-actions"><button class="small-button theme-toggle" data-theme-toggle type="button" aria-label="Switch to dark mode" title="Switch to dark mode">☾</button><button class="small-button install-button" data-install-app type="button" hidden>Install app</button><a class="small-button landing-nav-cta" href="signup.html">Get started <span aria-hidden="true">↗</span></a></div>
     </header>
 
-    <main>
+    <main id="main-content">
         <section class="landing-hero">
             <div class="hero-copy">
-                <p class="eyebrow">A calmer money habit</p>
-                <h1>Spend with a clearer picture.</h1>
-                <p class="hero-summary">Track daily expenses, keep an eye on your budget, and spot patterns before the month is over.</p>
-                <div class="hero-actions"><a class="primary-button landing-cta" href="signup.html">Start tracking <span>↗</span></a><a class="quiet-link" href="#how-it-works">See how it works <span>↓</span></a></div>
-                <div class="trust-line"><span class="trust-dot"></span><span>Simple personal tracking</span><span class="trust-separator">·</span><span>No bank connection required</span></div>
+                <p class="eyebrow">Money, made easier to follow</p>
+                <h1>See your money clearly.</h1>
+                <p class="hero-summary">Keep spending, budgets, and regular bills together. Make your next money decision with more context.</p>
+                <div class="hero-actions"><a class="primary-button landing-cta" href="signup.html">Get started <span aria-hidden="true">↗</span></a><a class="quiet-link" href="#how-it-works">Explore Ledger</a></div>
+                <p class="hero-note">Start with what you spend. No bank connection required.</p>
             </div>
-            <div class="hero-visual" aria-label="Ledger dashboard preview">
-                <div class="hero-photo"><img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1200&q=85" alt="Notebook, calculator, and coffee on a desk"></div>
-                <div class="preview-card preview-balance"><span>This month</span><strong>₦184,620</strong><small>12% less than last month</small></div>
-                <div class="preview-card preview-note"><span class="preview-check">✓</span><span><strong>Budget on track</strong><small>₦65,380 left to spend</small></span></div>
+            <div class="hero-visual">
+                <div class="hero-photo">
+                    <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&amp;fit=crop&amp;w=1500&amp;q=85" alt="Calculator and notebook ready for a monthly budget review" width="1500" height="1100" fetchpriority="high">
+                    <span class="hero-photo-caption">A little more clarity, every day.</span>
+                </div>
+                <div class="hero-photo-detail">
+                    <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&amp;fit=crop&amp;w=700&amp;q=80" alt="Shop owner serving a customer at the checkout" width="700" height="467" loading="lazy">
+                </div>
             </div>
         </section>
 
-        <section class="number-strip" aria-label="Ledger at a glance"><div><strong>01</strong><span>One clear view</span></div><div><strong>02</strong><span>Six simple categories</span></div><div><strong>03</strong><span>Saved across devices</span></div></section>
+        <section class="number-strip" aria-label="Ledger features"><div><strong>One view</strong><span>Everyday expenses in one place</span></div><div><strong>Your budget</strong><span>Monthly and category limits</span></div><div><strong>On your terms</strong><span>No bank connection required</span></div></section>
 
         <section class="story-section" id="how-it-works">
-            <div class="section-intro"><p class="eyebrow">How it works</p><h2>Small entries. Better context.</h2><p>Log a purchase, check your monthly budget, and see how your spending changes over time. Add recurring bills to get a reminder when they are due.</p></div>
-            <div class="principle-list"><article><span>01</span><div><h3>Capture the moment</h3><p>Add a purchase in seconds with a description, amount, category, and date.</p></div></article><article><span>02</span><div><h3>See the pattern</h3><p>Your dashboard turns separate purchases into a useful picture of the month.</p></div></article><article><span>03</span><div><h3>Choose with confidence</h3><p>Set a budget, watch what remains, and make the next choice with less guesswork.</p></div></article></div>
+            <div class="section-intro"><p class="eyebrow">A clearer picture</p><h2>Know where the month is going.</h2><p>One simple place to record spending, follow your budget, and plan for the bills that come around again.</p><a class="quiet-link story-link" href="signup.html">Make a start <span aria-hidden="true">↗</span></a></div>
+            <div class="principle-list"><article><span class="principle-icon" aria-hidden="true">＋</span><div><h3>Record it as it happens</h3><p>Add an amount, category, and date. Your spending history stays easy to search.</p></div></article><article><span class="principle-icon" aria-hidden="true">◷</span><div><h3>Keep an eye on your limits</h3><p>Set a monthly budget or create a separate limit for each category.</p></div></article><article><span class="principle-icon" aria-hidden="true">↻</span><div><h3>Plan for regular expenses</h3><p>Keep bill reminders in view and record them when they are due.</p></div></article></div>
         </section>
 
-        <section class="image-band" id="principles"><div class="image-band-photo"><img src="https://images.unsplash.com/photo-1554224154-26032ffc0d07?auto=format&fit=crop&w=1400&q=85" alt="Person reviewing handwritten financial notes"></div><div class="image-band-copy"><p class="eyebrow">Built for real life</p><h2>Useful, not noisy.</h2><p>No badges, no financial jargon, no pressure to connect every account. Just the information you need to understand your own habits.</p><a class="quiet-link" href="signup.html">Create your ledger <span>↗</span></a></div></section>
+        <section class="image-band" id="principles">
+            <div class="image-band-photo"><img src="https://images.unsplash.com/photo-1554224154-26032ffc0d07?auto=format&amp;fit=crop&amp;w=1400&amp;q=85" alt="Person reviewing handwritten financial notes at a desk" width="1400" height="1050" loading="lazy"></div>
+            <div class="image-band-copy"><p class="eyebrow">Built around real life</p><h2>Useful tools, without the noise.</h2><p>See your spending by category, compare months, and keep regular bills on your radar.</p><a class="quiet-link" href="signup.html">See your spending clearly <span aria-hidden="true">↗</span></a></div>
+        </section>
 
-        <section class="final-cta"><p class="eyebrow">Begin with today</p><h2>A clearer month starts with one entry.</h2><a class="primary-button landing-cta" href="signup.html">Open Ledger <span>↗</span></a></section>
+        <section class="final-cta">
+            <div class="final-cta-copy"><p class="eyebrow">Start with today</p><h2>Make room for a clearer month.</h2><p>Build a money habit that works at your pace.</p><a class="primary-button landing-cta" href="signup.html">Get started <span aria-hidden="true">↗</span></a></div>
+            <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&amp;fit=crop&amp;w=1000&amp;q=80" alt="Open notebook and calculator ready for planning expenses" width="1000" height="750" loading="lazy">
+        </section>
     </main>
-    <footer class="landing-footer"><span>ledger / personal finance</span><span>Created by <strong>Martins Odeshina</strong> · © 2026</span></footer>
+    <footer class="landing-footer"><a class="brand footer-brand" href="index.html" aria-label="Ledger home"><span class="brand-mark">L</span><span><strong>ledger</strong><small>personal finance</small></span></a><span>Personal finance, on your terms.</span><span>Created by <strong>Martins Odeshina</strong> · © 2026</span></footer>
     <script src="supabase-config.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js"></script><script src="auth-redirect.js"></script><script src="pwa.js"></script>
 </body>
 </html>

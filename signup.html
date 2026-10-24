@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Create your Ledger personal finance account.">
     <title>Create account | Ledger</title>
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111512">
 </head>
-<body class="auth-body" data-google-client-id="171352585547-2rnltfiha2a1rkdi4ulcatn2g234gni4.apps.googleusercontent.com">
+<body class="auth-body">
     <main class="auth-layout">
         <section class="auth-intro">
             <a class="brand" href="login.html"><span class="brand-mark">L</span><span><strong>ledger</strong><small>personal finance</small></span></a>
@@ -18,7 +19,7 @@
             <div class="auth-intro-footer"><span>+</span> Created by Martins Odeshina</div>
         </section>
         <section class="auth-card" aria-labelledby="signup-title">
-            <a class="back-home" href="index.html">← Back to Ledger home</a>
+            <div class="auth-card-top"><a class="back-home" href="index.html">← Back to Ledger home</a><button class="small-button theme-toggle" data-theme-toggle type="button" aria-label="Switch to dark mode" title="Switch to dark mode">☾</button></div>
             <p class="eyebrow">Start fresh</p>
             <h2 id="signup-title">Create your account</h2>
             <p class="muted">Your expense dashboard is one step away.</p>
@@ -41,14 +42,22 @@
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const message = document.getElementById('auth-message');
-            if (!username.includes('@') || password.length < 6) { message.textContent = 'Enter a valid email and a password with at least 6 characters.'; return; }
+            if (!document.getElementById('username').checkValidity() || password.length < 6) { message.textContent = 'Enter a valid email and a password with at least 6 characters.'; return; }
             const button = event.currentTarget.querySelector('button[type="submit"]');
             button.disabled = true;
             button.querySelector('.submit-label').textContent = 'Creating account...';
             try {
-                const { error } = await ledgerSupabase.auth.signUp({ email: username, password });
+                const { data, error } = await ledgerSupabase.auth.signUp({
+                    email: username,
+                    password,
+                    options: { emailRedirectTo: new URL('dashboard.html', window.location.href).href }
+                });
                 if (error) { message.textContent = error.message; return; }
-                message.textContent = 'Account created. Check your email to confirm your account, then sign in.';
+                if (data.session) {
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+                message.textContent = 'Account created. Check your email to confirm your address, then sign in.';
                 event.target.reset();
             } catch (error) {
                 message.textContent = 'Connection failed. Check your internet connection and try again.';
