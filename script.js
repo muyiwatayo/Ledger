@@ -1,6 +1,7 @@
-(async () => {
+async function initializeLedgerDashboard() {
+    const ledgerSupabase = window.ledgerSupabase;
     const { data: { user }, error: sessionError } = await ledgerSupabase.auth.getUser();
-    if (sessionError || !user) { window.location.href = 'login.html'; return; }
+    if (sessionError || !user) { window.location.href = '/login'; return; }
 
     const categories = ['Food', 'Bills', 'Transport', 'Shopping', 'Fun', 'Other'];
     const colors = {
@@ -11,7 +12,7 @@
         Fun: '#c39a32',
         Other: '#82909d'
     };
-    const trendColors = ['#b6d7bd', '#91c99d', '#69b982', '#4eaa6c', '#36945a', '#1d6838'];
+
     const today = new Date();
     const monthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const dateKey = (date) => `${monthKey(date)}-${String(date.getDate()).padStart(2, '0')}`;
@@ -22,6 +23,7 @@
         const lastDay = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate();
         return dateKey(new Date(nextMonth.getFullYear(), nextMonth.getMonth(), Math.min(dueDay, lastDay)));
     };
+
     const currentMonth = monthKey(today);
     const currentYear = today.getFullYear();
     const greeting = today.getHours() < 12 ? 'Good morning' : today.getHours() < 18 ? 'Good afternoon' : 'Good evening';
@@ -30,51 +32,6 @@
     let categoryBudgets = {};
     let budget = 250000;
     let editingExpenseId = null;
-    let accounts = [];
-    let incomeEntries = [];
-    let savingsGoals = [];
-    let debts = [];
-    let alerts = [];
-    const storage = {
-        read(key, fallback) {
-            try {
-                const raw = localStorage.getItem(key);
-                return raw ? JSON.parse(raw) : fallback;
-            } catch (error) {
-                return fallback;
-            }
-        },
-        write(key, value) {
-            localStorage.setItem(key, JSON.stringify(value));
-        }
-    };
-    const defaultAccounts = [
-        { id: 'main', name: 'Main account', type: 'Bank', balance: 1285000 },
-        { id: 'cash', name: 'Cash wallet', type: 'Cash', balance: 175000 },
-        { id: 'wallet', name: 'Savings wallet', type: 'Wallet', balance: 625000 }
-    ];
-    const defaultSavingsGoals = [
-        { id: 'laptop', title: 'New laptop', target: 780000, saved: 420000, due: '2026-12-15' },
-        { id: 'school', title: 'School fees', target: 600000, saved: 240000, due: '2026-10-30' },
-        { id: 'emergency', title: 'Emergency fund', target: 1000000, saved: 680000, due: '2027-02-15' }
-    ];
-    const defaultDebts = [
-        { id: 'student', name: 'School loan', type: 'Loan', balance: 280000, dueDate: '2026-11-12', progress: 35 },
-        { id: 'micro', name: 'Business advance', type: 'Debt', balance: 166000, dueDate: '2026-10-27', progress: 58 }
-    ];
-    const defaultAlerts = [
-        { id: 'budget', title: 'Food is close to target', detail: 'You have spent 86% of your food budget this month.', severity: 'warning' },
-        { id: 'due', title: 'Internet bill due soon', detail: 'Your next recurring payment lands in 3 days.', severity: 'info' },
-        { id: 'goal', title: 'Emergency fund is on track', detail: 'You are 68% of the way to your target.', severity: 'success' }
-    ];
-    accounts = storage.read('ledger.accounts', defaultAccounts);
-    incomeEntries = storage.read('ledger.incomeEntries', [
-        { description: 'Salary deposit', amount: 360000, date: dateKey(new Date(today.getFullYear(), today.getMonth(), 1)) },
-        { description: 'Freelance design', amount: 150000, date: dateKey(new Date(today.getFullYear(), today.getMonth(), 10)) }
-    ]);
-    savingsGoals = storage.read('ledger.savingsGoals', defaultSavingsGoals);
-    debts = storage.read('ledger.debts', defaultDebts);
-    alerts = storage.read('ledger.alerts', defaultAlerts);
     const $ = (id) => document.getElementById(id);
     const money = (value) => `${Number(value) < 0 ? '-' : ''}₦${Math.abs(Number(value)).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
     const monthExpenses = () => expenses.filter((item) => item.expense_date.slice(0, 7) === currentMonth);
@@ -153,7 +110,6 @@
     function resetExpenseForm() {
         editingExpenseId = null;
         $('expense-form').reset();
-        $('transaction-type').value = 'expense';
         $('expense-date').value = dateKey(today);
         $('expense-form-title').textContent = 'Record an expense';
         $('expense-submit-btn').innerHTML = 'Add expense <span>↗</span>';
@@ -167,8 +123,8 @@
         const totals = categories.map((name) => total(items.filter((item) => item.category === name))); const sum = totals.reduce((result, value) => result + value, 0);
         $('chart-empty').hidden = sum > 0; $('chart-legend').innerHTML = ''; if (!sum) return;
         let angle = -Math.PI / 2; const center = size / 2; const radius = size * .37;
-        categories.forEach((name, index) => { if (!totals[index]) return; const next = angle + totals[index] / sum * Math.PI * 2; context.beginPath(); context.moveTo(center, center); context.arc(center, center, radius, angle, next); context.closePath(); context.fillStyle = colors[name]; context.fill(); context.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--chart-center').trim() || '#ffffff'; context.lineWidth = 2; context.stroke(); angle = next; const legendItem = document.createElement('span'); legendItem.className = 'legend-item'; const dot = document.createElement('i'); dot.className = 'legend-dot'; dot.style.backgroundColor = colors[name]; legendItem.append(dot, document.createTextNode(`${name} ${Math.round(totals[index] / sum * 100)}%`)); $('chart-legend').appendChild(legendItem); });
-        context.beginPath(); context.arc(center, center, radius * .54, 0, Math.PI * 2); context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--chart-center').trim() || '#ffffff'; context.fill(); context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--chart-ink').trim() || '#18221c'; context.font = '700 13px "Sora", Arial, sans-serif'; context.textAlign = 'center'; context.fillText(money(sum), center, center + 4);
+        categories.forEach((name, index) => { if (!totals[index]) return; const next = angle + totals[index] / sum * Math.PI * 2; context.beginPath(); context.moveTo(center, center); context.arc(center, center, radius, angle, next); context.closePath(); context.fillStyle = colors[name]; context.fill(); context.strokeStyle = '#ffffff'; context.lineWidth = 2; context.stroke(); angle = next; const legendItem = document.createElement('span'); legendItem.className = 'legend-item'; const dot = document.createElement('i'); dot.className = 'legend-dot'; dot.style.backgroundColor = colors[name]; legendItem.append(dot, document.createTextNode(`${name} ${Math.round(totals[index] / sum * 100)}%`)); $('chart-legend').appendChild(legendItem); });
+        context.beginPath(); context.arc(center, center, radius * .54, 0, Math.PI * 2); context.fillStyle = '#ffffff'; context.fill(); context.fillStyle = '#18221c'; context.font = '700 13px "Sora", Arial, sans-serif'; context.textAlign = 'center'; context.fillText(money(sum), center, center + 4);
     }
 
     function renderTable() {
@@ -178,105 +134,34 @@
         $('empty-state').hidden = visible.length > 0; $('transaction-summary').textContent = `Showing ${visible.length} of ${expenses.length} transaction${expenses.length === 1 ? '' : 's'}`;
     }
 
-    function renderAccounts() {
-        const list = $('account-list');
-        if (!list) return;
-        const totalBalance = accounts.reduce((sum, account) => sum + Number(account.balance || 0), 0);
-        list.innerHTML = accounts.map((account) => `
-            <div class="account-card">
-                <div class="account-card-header">
-                    <span class="account-pill">${escapeHtml(account.type)}</span>
-                    <strong>${escapeHtml(account.name)}</strong>
-                </div>
-                <span class="account-balance">${money(account.balance)}</span>
-            </div>
-        `).join('') || '<p class="empty-inline">No accounts added yet.</p>';
-        $('total-balance').textContent = money(totalBalance);
-        $('balance-summary').textContent = `${accounts.length} active ${accounts.length === 1 ? 'account' : 'accounts'} in your wallet stack`;
-    }
-
-    function renderGoals() {
-        const list = $('goal-list');
-        if (!list) return;
-        list.innerHTML = savingsGoals.map((goal) => {
-            const percent = Math.min((goal.saved / goal.target) * 100, 100);
-            return `
-                <div class="goal-item">
-                    <div class="goal-meta"><strong>${escapeHtml(goal.title)}</strong><span>${money(goal.saved)} of ${money(goal.target)}</span></div>
-                    <div class="goal-meter"><span style="width:${percent}%"></span></div>
-                    <div class="goal-caption"><span>${Math.round(percent)}% funded</span><span>Due ${formatDate(goal.due)}</span></div>
-                </div>
-            `;
-        }).join('') || '<p class="empty-inline">No savings goals set yet.</p>';
-    }
-
-    function renderDebts() {
-        const list = $('debt-list');
-        if (!list) return;
-        const liabilityTotal = debts.reduce((sum, debt) => sum + Number(debt.balance || 0), 0);
-        list.innerHTML = debts.map((debt) => `
-            <div class="debt-item">
-                <div class="debt-header"><strong>${escapeHtml(debt.name)}</strong><span>${escapeHtml(debt.type)}</span></div>
-                <div class="debt-meta"><strong>${money(debt.balance)}</strong><span>Due ${formatDate(debt.dueDate)}</span></div>
-                <div class="goal-meter debt-meter"><span style="width:${Math.min(debt.progress, 100)}%"></span></div>
-                <small>${Math.min(debt.progress, 100)}% of repayment plan completed</small>
-            </div>
-        `).join('') || '<p class="empty-inline">No loans or debts recorded.</p>';
-        $('liabilities-total').textContent = money(liabilityTotal);
-    }
-
-    function renderAlerts() {
-        const list = $('alert-list');
-        if (!list) return;
-        list.innerHTML = alerts.map((alert) => `
-            <div class="alert-item alert-${alert.severity}">
-                <span class="alert-pill">${alert.severity}</span>
-                <div>
-                    <strong>${escapeHtml(alert.title)}</strong>
-                    <p>${escapeHtml(alert.detail)}</p>
-                </div>
-            </div>
-        `).join('') || '<p class="empty-inline">No alerts right now.</p>';
-    }
-
-    function renderNetWorth() {
-        const assetTotal = accounts.reduce((sum, account) => sum + Number(account.balance || 0), 0);
-        const liabilityTotal = debts.reduce((sum, debt) => sum + Number(debt.balance || 0), 0);
-        const netWorth = assetTotal - liabilityTotal;
-        $('assets-total').textContent = money(assetTotal);
-        $('liabilities-total').textContent = money(liabilityTotal);
-        $('net-worth-total').textContent = money(netWorth);
-    }
-
-    function renderCategoryBudgets() {
-        const list = $('category-budget-list');
-        if (!list) return;
-        list.replaceChildren();
-        categories.forEach((category) => {
-            const limit = categoryBudgets[category];
-            const spent = total(monthExpenses().filter((item) => item.category === category));
-            const row = document.createElement('article');
-            row.className = 'category-budget-row';
-            row.dataset.category = category;
-            if (!limit) {
-                row.innerHTML = `<div class="category-budget-heading"><strong>${category}</strong><span>No limit set</span></div><div class="category-budget-meter" aria-hidden="true"><span></span></div><div class="category-budget-caption"><span>${money(spent)} spent this month</span><span>Set a limit above</span></div>`;
-                list.appendChild(row);
-                return;
-            }
-            const percent = spent / limit * 100;
-            const overBudget = spent > limit;
-            row.innerHTML = `<div class="category-budget-heading"><strong>${category}</strong><span>${Math.round(percent)}% used</span></div><div class="category-budget-meter" role="progressbar" aria-label="${category} budget used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(Math.round(percent), 100)}"><span style="width:${Math.min(percent, 100)}%"></span></div><div class="category-budget-caption"><span>${money(spent)} of ${money(limit)}${overBudget ? ` · ${money(spent - limit)} over` : ` · ${money(limit - spent)} left`}</span><button class="row-action category-budget-clear" type="button" data-category="${category}" aria-label="Remove ${category} monthly limit">Remove limit</button></div>`;
-            if (overBudget) row.classList.add('is-over-budget');
-            list.appendChild(row);
-        });
-    }
-
     function renderRecurring() {
         const list = $('recurring-list');
         const sorted = [...recurringExpenses].sort((first, second) => first.next_due_date.localeCompare(second.next_due_date));
         if (!sorted.length) {
             list.innerHTML = '<p class="recurring-empty">No reminders yet. Add a regular bill above to keep it in view.</p>';
             return;
+        }
+
+        function renderCategoryBudgets() {
+            const list = $('category-budget-list');
+            list.replaceChildren();
+            categories.forEach((category) => {
+                const limit = categoryBudgets[category];
+                const spent = total(monthExpenses().filter((item) => item.category === category));
+                const row = document.createElement('article');
+                row.className = 'category-budget-row';
+                row.dataset.category = category;
+                if (!limit) {
+                    row.innerHTML = `<div class="category-budget-heading"><strong>${category}</strong><span>No limit set</span></div><div class="category-budget-meter" aria-hidden="true"><span></span></div><div class="category-budget-caption"><span>${money(spent)} spent this month</span><span>Set a limit above</span></div>`;
+                    list.appendChild(row);
+                    return;
+                }
+                const percent = spent / limit * 100;
+                const overBudget = spent > limit;
+                row.innerHTML = `<div class="category-budget-heading"><strong>${category}</strong><span>${Math.round(percent)}% used</span></div><div class="category-budget-meter" role="progressbar" aria-label="${category} budget used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(Math.round(percent), 100)}"><span style="width:${Math.min(percent, 100)}%"></span></div><div class="category-budget-caption"><span>${money(spent)} of ${money(limit)}${overBudget ? ` · ${money(spent - limit)} over` : ` · ${money(limit - spent)} left`}</span><button class="row-action category-budget-clear" type="button" data-category="${category}" aria-label="Remove ${category} monthly limit">Remove limit</button></div>`;
+                if (overBudget) row.classList.add('is-over-budget');
+                list.appendChild(row);
+            });
         }
 
         list.innerHTML = sorted.map((item) => {
@@ -307,7 +192,6 @@
                     const bar = document.createElement('span');
                     bar.className = `trend-bar${index === months.length - 1 ? ' is-current' : ''}`;
                     bar.style.setProperty('--bar-height', `${Math.max(values[index] / maxValue * 100, 2)}%`);
-                    bar.style.setProperty('--bar-color', trendColors[index]);
                     bar.title = `${date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}: ${money(values[index])}`;
                     const label = document.createElement('span');
                     label.className = 'trend-month';
@@ -331,20 +215,8 @@
             }
 
     function render() {
-        const monthTotal = total(monthExpenses());
-        const remaining = budget - monthTotal;
-        const budgetPercent = budget > 0 ? monthTotal / budget * 100 : 0;
-        const monthlyIncome = incomeEntries.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-        const totalBalance = accounts.reduce((sum, account) => sum + Number(account.balance || 0), 0);
-        $('total-spent').textContent = money(monthTotal);
-        $('income-total').textContent = money(monthlyIncome);
-        $('budget-total').textContent = money(budget);
-        $('remaining-budget').textContent = money(remaining);
-        $('transaction-count').textContent = expenses.length;
-        $('total-balance').textContent = money(totalBalance);
-        $('spend-change').textContent = monthTotal ? `${Math.round(monthTotal / budget * 100)}% of your budget used` : 'No expenses yet';
-        $('income-summary').textContent = `${incomeEntries.length} inflow ${incomeEntries.length === 1 ? 'entry' : 'entries'} this month`;
-        $('budget-status').textContent = remaining < 0 ? `${money(Math.abs(remaining))} over budget` : remaining < budget * .2 ? 'Budget is getting tight' : "You're on track";
+        const monthTotal = total(monthExpenses()); const remaining = budget - monthTotal; const budgetPercent = budget > 0 ? monthTotal / budget * 100 : 0; $('total-spent').textContent = money(monthTotal); $('budget-total').textContent = money(budget); $('remaining-budget').textContent = money(remaining); $('transaction-count').textContent = expenses.length;
+        $('spend-change').textContent = monthTotal ? `${Math.round(monthTotal / budget * 100)}% of your budget used` : 'No expenses yet'; $('budget-status').textContent = remaining < 0 ? `${money(Math.abs(remaining))} over budget` : remaining < budget * .2 ? 'Budget is getting tight' : "You're on track";
         const meter = $('budget-meter'); const fill = $('budget-meter-fill'); const usage = Math.min(Math.max(budgetPercent, 0), 100);
         if (fill) {
             fill.style.width = `${usage}%`;
@@ -362,10 +234,8 @@
             chartItems = expenses;
         }
 
-        renderTable(); drawChart(chartItems); renderTrend(); renderAccounts(); renderGoals(); renderDebts(); renderAlerts(); renderNetWorth(); renderRecurring(); renderCategoryBudgets();
+        renderTable(); drawChart(chartItems); renderTrend(); renderRecurring(); renderCategoryBudgets();
     }
-
-    window.addEventListener('ledger-theme-change', render);
 
     $('category-budget-form').addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -425,31 +295,8 @@
     });
 
     $('expense-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const description = $('description').value.trim();
-        const amount = Number($('amount').value);
-        const expenseDate = $('expense-date').value;
-        const transactionType = $('transaction-type').value;
-        $('form-message').textContent = '';
-        if (!description || !amount || amount <= 0 || !expenseDate) {
-            $('form-message').textContent = 'Add a description, date, and amount greater than zero.';
-            return;
-        }
-
-        if (transactionType === 'income') {
-            incomeEntries.unshift({
-                description,
-                amount,
-                date: expenseDate,
-                category: $('category').value
-            });
-            storage.write('ledger.incomeEntries', incomeEntries);
-            resetExpenseForm();
-            render();
-            notify('Income added to your cash flow.');
-            return;
-        }
-
+        event.preventDefault(); const description = $('description').value.trim(); const amount = Number($('amount').value); const expenseDate = $('expense-date').value; $('form-message').textContent = '';
+        if (!description || !amount || amount <= 0 || !expenseDate) { $('form-message').textContent = 'Add a description, date, and amount greater than zero.'; return; }
         const expense = { description, amount, category: $('category').value, expense_date: expenseDate };
         if (editingExpenseId) {
             const { data, error } = await ledgerSupabase.from('expenses').update(expense).eq('id', editingExpenseId).eq('user_id', user.id).select().single();
@@ -461,54 +308,6 @@
         const { data, error } = await ledgerSupabase.from('expenses').insert(expense).select().single();
         if (error) { $('form-message').textContent = error.message; return; }
         expenses.unshift(data); resetExpenseForm(); render(); notify('Expense added to your ledger.');
-    });
-
-    $('scan-receipt-btn').addEventListener('click', () => {
-        const input = $('receipt-file-input');
-        input.value = '';
-        input.click();
-    });
-
-    $('receipt-file-input').addEventListener('change', (event) => {
-        const file = event.target.files && event.target.files[0];
-        if (!file) return;
-        const amount = Number((Math.random() * 8800 + 800).toFixed(2));
-        const inferredLabel = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim() || 'Receipt purchase';
-        $('description').value = inferredLabel;
-        $('amount').value = String(amount);
-        $('category').value = 'Food';
-        $('expense-date').value = dateKey(today);
-        $('transaction-type').value = 'expense';
-        $('form-message').textContent = 'Receipt detected — review the details and save it.';
-        $('description').focus();
-    });
-
-    $('transfer-form').addEventListener('submit', (event) => {
-        event.preventDefault();
-        const sourceId = $('transfer-from').value;
-        const targetId = $('transfer-to').value;
-        const value = Number($('transfer-amount').value);
-        const message = $('transfer-message');
-        if (!Number.isFinite(value) || value <= 0) {
-            message.textContent = 'Enter a transfer amount greater than zero.';
-            return;
-        }
-        if (sourceId === targetId) {
-            message.textContent = 'Choose different accounts for the transfer.';
-            return;
-        }
-        const source = accounts.find((account) => account.id === sourceId);
-        const target = accounts.find((account) => account.id === targetId);
-        if (!source || !target || source.balance < value) {
-            message.textContent = 'Not enough funds in the source account.';
-            return;
-        }
-        source.balance -= value;
-        target.balance += value;
-        storage.write('ledger.accounts', accounts);
-        $('transfer-form').reset();
-        message.textContent = `Transferred ${money(value)} from ${source.name} to ${target.name}.`;
-        render();
     });
 
     $('recurring-form').addEventListener('submit', async (event) => {
@@ -619,11 +418,6 @@
     $('cancel-edit-btn').addEventListener('click', resetExpenseForm);
     $('search-input').addEventListener('input', renderTable); $('category-filter').addEventListener('change', renderTable); $('chart-period').addEventListener('change', render); window.addEventListener('resize', render);
     $('clear-btn').addEventListener('click', async () => { if (!expenses.length || !confirm('Clear every transaction from this account?')) return; const { error } = await ledgerSupabase.from('expenses').delete().eq('user_id', user.id); if (error) { notify(error.message); return; } expenses = []; render(); notify('All transactions cleared.'); });
-    $('transaction-type').addEventListener('change', () => {
-        const isIncome = $('transaction-type').value === 'income';
-        $('expense-form-title').textContent = isIncome ? 'Record income' : 'Record an expense';
-        $('expense-submit-btn').innerHTML = isIncome ? 'Add income <span>↗</span>' : 'Add expense <span>↗</span>';
-    });
     $('edit-budget-btn').addEventListener('click', () => {
         const form = $('budget-edit-form');
         form.hidden = !form.hidden;
@@ -666,9 +460,11 @@
         }
     });
     $('export-btn').addEventListener('click', () => { if (!expenses.length) { notify('Add an expense before exporting.'); return; } const rows = [['Description', 'Category', 'Date', 'Amount'], ...expenses.map((item) => [item.description, item.category, item.expense_date, item.amount])]; const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n'); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); link.download = `ledger-${currentMonth}.csv`; link.click(); URL.revokeObjectURL(link.href); notify('CSV export downloaded.'); });
-    const logout = async () => { await ledgerSupabase.auth.signOut(); window.location.href = 'login.html'; };
+    const logout = async () => { await ledgerSupabase.auth.signOut(); window.location.href = '/login'; };
     $('logout-btn').addEventListener('click', logout);
     $('logout-top').addEventListener('click', logout);
 
     try { await loadData(); render(); } catch (error) { $('form-message').textContent = `Could not load your cloud data: ${error.message}`; }
-})();
+}
+
+if (typeof window !== 'undefined') window.initializeLedgerDashboard = initializeLedgerDashboard;
