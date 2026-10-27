@@ -1,0 +1,17 @@
+import Link from "next/link";
+import SiteFooter from "./SiteFooter";
+
+export default function LegalPage({ title, children }) {
+  return (
+    <div className="landing-body legal-body">
+      <main className="legal-content">
+        <Link className="back-home" href="/">← Back to Ledger home</Link>
+        <p className="eyebrow">Ledger</p>
+        <h1>{title}</h1>
+        <p className="legal-updated">Effective October 27, 2026</p>
+        <div className="legal-copy">{children}</div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
