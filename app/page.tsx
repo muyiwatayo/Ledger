@@ -118,12 +118,32 @@ export default function HomePage() {
               <p>No. Add expenses yourself and keep control of what goes into your Ledger account.</p>
             </details>
             <details>
+              <summary>How do I create an account?</summary>
+              <p>Sign up with your email and a password. If email confirmation is enabled, enter the 6-digit code sent to your inbox. Google sign-up is also available once Google authentication is configured.</p>
+            </details>
+            <details>
+              <summary>Can I sign in with Google?</summary>
+              <p>Yes, once Google is enabled for Ledger in Supabase. If it has not been configured yet, sign in with your email and password instead.</p>
+            </details>
+            <details>
+              <summary>Where are my expenses saved?</summary>
+              <p>Your expenses and budget are saved to your Ledger account in Supabase. Account-level access rules keep each signed-in user’s records separate.</p>
+            </details>
+            <details>
+              <summary>Can I edit or remove an expense?</summary>
+              <p>Yes. Find the transaction in your dashboard to edit its details or remove it from your history.</p>
+            </details>
+            <details>
               <summary>Will recurring expenses be added automatically?</summary>
               <p>No. Ledger shows a reminder when a bill is due, and you confirm before it becomes an expense.</p>
             </details>
             <details>
               <summary>Can I take my transaction history with me?</summary>
               <p>Yes. Export your transactions from the dashboard as a CSV file.</p>
+            </details>
+            <details>
+              <summary>Which currency does Ledger use?</summary>
+              <p>Ledger currently displays amounts in Nigerian naira (₦).</p>
             </details>
           </div>
         </section>

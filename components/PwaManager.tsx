@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { JSX, ReactNode } from "react";
 
-export function PwaManager() {
+type InstallButtonProps = {
+  className?: string;
+  children?: ReactNode;
+  ariaLabel?: string;
+};
+
+export function PwaManager(): null {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/service-worker.js").catch((error) => {
@@ -10,7 +17,7 @@ export function PwaManager() {
       });
     }
 
-    function captureInstallPrompt(event) {
+    function captureInstallPrompt(event: BeforeInstallPromptEvent) {
       event.preventDefault();
       window.ledgerInstallPrompt = event;
       window.dispatchEvent(new Event("ledger-install-available"));
@@ -35,7 +42,7 @@ export function InstallButton({
   className = "small-button install-button",
   children = "Install app",
   ariaLabel,
-}) {
+}: InstallButtonProps): JSX.Element {
   const [available, setAvailable] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [message, setMessage] = useState("");

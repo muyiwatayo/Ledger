@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { JSX } from "react";
 
-export default function ThemeToggle() {
+export default function ThemeToggle(): JSX.Element {
   const [theme, setTheme] = useState("light");
 
   useEffect(() => {

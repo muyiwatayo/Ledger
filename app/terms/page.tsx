@@ -1,6 +1,7 @@
 import LegalPage from "../../components/LegalPage";
+import type { Metadata } from "next";
 
-export const metadata = { title: "Terms of Service" };
+export const metadata: Metadata = { title: "Terms of Service" };
 
 export default function TermsPage() {
   return (

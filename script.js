@@ -142,28 +142,6 @@ async function initializeLedgerDashboard() {
             return;
         }
 
-        function renderCategoryBudgets() {
-            const list = $('category-budget-list');
-            list.replaceChildren();
-            categories.forEach((category) => {
-                const limit = categoryBudgets[category];
-                const spent = total(monthExpenses().filter((item) => item.category === category));
-                const row = document.createElement('article');
-                row.className = 'category-budget-row';
-                row.dataset.category = category;
-                if (!limit) {
-                    row.innerHTML = `<div class="category-budget-heading"><strong>${category}</strong><span>No limit set</span></div><div class="category-budget-meter" aria-hidden="true"><span></span></div><div class="category-budget-caption"><span>${money(spent)} spent this month</span><span>Set a limit above</span></div>`;
-                    list.appendChild(row);
-                    return;
-                }
-                const percent = spent / limit * 100;
-                const overBudget = spent > limit;
-                row.innerHTML = `<div class="category-budget-heading"><strong>${category}</strong><span>${Math.round(percent)}% used</span></div><div class="category-budget-meter" role="progressbar" aria-label="${category} budget used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(Math.round(percent), 100)}"><span style="width:${Math.min(percent, 100)}%"></span></div><div class="category-budget-caption"><span>${money(spent)} of ${money(limit)}${overBudget ? ` · ${money(spent - limit)} over` : ` · ${money(limit - spent)} left`}</span><button class="row-action category-budget-clear" type="button" data-category="${category}" aria-label="Remove ${category} monthly limit">Remove limit</button></div>`;
-                if (overBudget) row.classList.add('is-over-budget');
-                list.appendChild(row);
-            });
-        }
-
         list.innerHTML = sorted.map((item) => {
             const due = item.next_due_date <= dateKey(today);
             const dueLabel = due
@@ -172,6 +150,28 @@ async function initializeLedgerDashboard() {
             const repeatLabel = item.frequency === 'weekly' ? 'Every week' : 'Every month';
             return `<div class="recurring-item"><div class="recurring-details"><strong>${escapeHtml(item.description)}</strong><span>${escapeHtml(item.category)} · ${repeatLabel} · ${dueLabel}</span></div><strong class="recurring-amount">${money(item.amount)}</strong><div class="recurring-actions"><button class="row-action recurring-record" type="button" data-recurring-action="record" data-id="${item.id}" aria-label="Record recurring expense ${escapeHtml(item.description)}" ${due ? '' : 'disabled'}>Record expense</button><button class="row-action delete-button" type="button" data-recurring-action="delete" data-id="${item.id}" aria-label="Remove ${escapeHtml(item.description)} reminder">Remove</button></div></div>`;
         }).join('');
+    }
+
+    function renderCategoryBudgets() {
+        const list = $('category-budget-list');
+        list.replaceChildren();
+        categories.forEach((category) => {
+            const limit = categoryBudgets[category];
+            const spent = total(monthExpenses().filter((item) => item.category === category));
+            const row = document.createElement('article');
+            row.className = 'category-budget-row';
+            row.dataset.category = category;
+            if (!limit) {
+                row.innerHTML = `<div class="category-budget-heading"><strong>${category}</strong><span>No limit set</span></div><div class="category-budget-meter" aria-hidden="true"><span></span></div><div class="category-budget-caption"><span>${money(spent)} spent this month</span><span>Set a limit above</span></div>`;
+                list.appendChild(row);
+                return;
+            }
+            const percent = spent / limit * 100;
+            const overBudget = spent > limit;
+            row.innerHTML = `<div class="category-budget-heading"><strong>${category}</strong><span>${Math.round(percent)}% used</span></div><div class="category-budget-meter" role="progressbar" aria-label="${category} budget used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(Math.round(percent), 100)}"><span style="width:${Math.min(percent, 100)}%"></span></div><div class="category-budget-caption"><span>${money(spent)} of ${money(limit)}${overBudget ? ` · ${money(spent - limit)} over` : ` · ${money(limit - spent)} left`}</span><button class="row-action category-budget-clear" type="button" data-category="${category}" aria-label="Remove ${category} monthly limit">Remove limit</button></div>`;
+            if (overBudget) row.classList.add('is-over-budget');
+            list.appendChild(row);
+        });
     }
 
     function renderTrend() {
@@ -312,6 +312,7 @@ async function initializeLedgerDashboard() {
 
     $('recurring-form').addEventListener('submit', async (event) => {
         event.preventDefault();
+        const form = event.currentTarget;
         const description = $('recurring-description').value.trim();
         const amount = Number($('recurring-amount').value);
         const nextDueDate = $('recurring-date').value;
@@ -336,7 +337,7 @@ async function initializeLedgerDashboard() {
             }).select('id, description, amount, category, frequency, due_day, next_due_date').single();
             if (error) throw error;
             recurringExpenses.push(data);
-            event.currentTarget.reset();
+            form.reset();
             $('recurring-date').value = dateKey(today);
             renderRecurring();
             notify('Recurring reminder added.');

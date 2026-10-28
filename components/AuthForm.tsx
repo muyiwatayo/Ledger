@@ -2,15 +2,23 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { supabase } from "../lib/supabase";
 import ThemeToggle from "./ThemeToggle";
 
-export default function AuthForm({ mode }) {
+type AuthFormProps = { mode: "login" | "signup" };
+type VerificationMode = "signup" | "email" | null;
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+export default function AuthForm({ mode }: AuthFormProps) {
   const isSignup = mode === "signup";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [verificationMode, setVerificationMode] = useState(null);
+  const [verificationMode, setVerificationMode] = useState<VerificationMode>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -28,7 +36,7 @@ export default function AuthForm({ mode }) {
     };
   }, []);
 
-  async function submit(event) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || (isSignup && password.length < 6) || (!isSignup && !password)) {
@@ -60,7 +68,7 @@ export default function AuthForm({ mode }) {
         window.location.assign("/dashboard");
       }
     } catch (error) {
-      setMessage(error.message || "Connection failed. Check your internet connection and try again.");
+      setMessage(errorMessage(error, "Connection failed. Check your internet connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -82,17 +90,21 @@ export default function AuthForm({ mode }) {
       setVerificationMode("email");
       setMessage(`We sent a 6-digit sign-in code to ${email.trim()}.`);
     } catch (error) {
-      setMessage(error.message || "Connection failed. Check your internet connection and try again.");
+      setMessage(errorMessage(error, "Connection failed. Check your internet connection and try again."));
     } finally {
       setBusy(false);
     }
   }
 
-  async function verifyCode(event) {
+  async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     if (!/^\d{6}$/.test(otp)) {
       setMessage("Enter the 6-digit code from your email.");
+      return;
+    }
+    if (!verificationMode) {
+      setMessage("Request a sign-in code before verifying it.");
       return;
     }
 
@@ -106,7 +118,7 @@ export default function AuthForm({ mode }) {
       if (error) throw error;
       window.location.assign("/dashboard");
     } catch (error) {
-      setMessage(error.message || "That code could not be verified. Request a new code and try again.");
+      setMessage(errorMessage(error, "That code could not be verified. Request a new code and try again."));
     } finally {
       setBusy(false);
     }
@@ -126,7 +138,7 @@ export default function AuthForm({ mode }) {
       setOtp("");
       setMessage(`A new 6-digit code has been sent to ${email.trim()}.`);
     } catch (error) {
-      setMessage(error.message || "Could not send another code. Wait a moment and try again.");
+      setMessage(errorMessage(error, "Could not send another code. Wait a moment and try again."));
     } finally {
       setBusy(false);
     }
@@ -142,7 +154,7 @@ export default function AuthForm({ mode }) {
       });
       if (error) throw error;
     } catch (error) {
-      setMessage(error.message || "Could not start Google sign-in. Check your connection and Supabase Google provider settings.");
+      setMessage(errorMessage(error, "Could not start Google sign-in. Check your connection and Supabase Google provider settings."));
       setBusy(false);
     }
   }

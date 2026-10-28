@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import type { JSX } from "react";
 import { supabase } from "../lib/supabase";
 
-export default function InstalledAppRedirect() {
+export default function InstalledAppRedirect(): JSX.Element | null {
   useEffect(() => {
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||

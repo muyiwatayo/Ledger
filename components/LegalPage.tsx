@@ -1,7 +1,10 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import SiteFooter from "./SiteFooter";
 
-export default function LegalPage({ title, children }) {
+type LegalPageProps = { title: string; children: ReactNode };
+
+export default function LegalPage({ title, children }: LegalPageProps) {
   return (
     <div className="landing-body legal-body">
       <main className="legal-content">

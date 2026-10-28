@@ -4,9 +4,10 @@ import {
   IconBrandWhatsapp,
   IconBrandX,
 } from "@tabler/icons-react";
+import type { JSX } from "react";
 import ThemeToggle from "./ThemeToggle";
 
-export default function SiteFooter() {
+export default function SiteFooter(): JSX.Element {
   return (
     <footer className="landing-footer site-footer">
       <div className="site-footer-inner">

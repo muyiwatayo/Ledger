@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import type { JSX } from "react";
 import "../../script.js";
 import { supabase } from "../../lib/supabase";
 import { InstallButton } from "../../components/PwaManager";
 
-export default function DashboardPage() {
+export default function DashboardPage(): JSX.Element {
   useEffect(() => {
     document.body.className = "app-body";
     document.title = "Dashboard | Ledger";
@@ -48,7 +49,7 @@ export default function DashboardPage() {
 
           <section className="kpi-grid" id="overview" aria-label="Spending overview">
             <article className="kpi-card kpi-primary"><div className="kpi-heading"><span>Total spent</span><svg className="kpi-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17 10 11l4 4 6-8" /><path d="M15 7h5v5" /></svg></div><strong id="total-spent">₦0</strong><p id="spend-change">No expenses yet</p></article>
-            <article className="kpi-card"><div className="kpi-heading"><span>Monthly budget</span><svg className="kpi-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 7h8M8 11h8M8 15h5" /></svg></div><strong id="budget-total">₦250,000</strong><div className="budget-meter" id="budget-meter" aria-label="Budget usage" role="progressbar" aria-valuemin="0" aria-valuemax="100"><span id="budget-meter-fill" /></div><div className="budget-meter-caption"><span id="budget-used">0%</span><span>used</span></div><p><button className="text-button" id="edit-budget-btn" type="button" aria-expanded="false" aria-controls="budget-edit-form">Edit budget</button></p><form className="budget-edit-form" id="budget-edit-form" hidden noValidate><div><label htmlFor="monthly-budget-input">New monthly limit</label><div className="input-with-symbol"><span>₦</span><input id="monthly-budget-input" type="number" min="0.01" step="0.01" required /></div></div><p className="form-message" id="budget-edit-message" role="alert" /><div className="budget-edit-actions"><button className="primary-button" type="submit">Save</button><button className="secondary-button" id="cancel-budget-edit-btn" type="button">Cancel</button></div></form></article>
+            <article className="kpi-card"><div className="kpi-heading"><span>Monthly budget</span><svg className="kpi-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 7h8M8 11h8M8 15h5" /></svg></div><strong id="budget-total">₦250,000</strong><div className="budget-meter" id="budget-meter" aria-label="Budget usage" role="progressbar" aria-valuemin={0} aria-valuemax={100}><span id="budget-meter-fill" /></div><div className="budget-meter-caption"><span id="budget-used">0%</span><span>used</span></div><p><button className="text-button" id="edit-budget-btn" type="button" aria-expanded="false" aria-controls="budget-edit-form">Edit budget</button></p><form className="budget-edit-form" id="budget-edit-form" hidden noValidate><div><label htmlFor="monthly-budget-input">New monthly limit</label><div className="input-with-symbol"><span>₦</span><input id="monthly-budget-input" type="number" min="0.01" step="0.01" required /></div></div><p className="form-message" id="budget-edit-message" role="alert" /><div className="budget-edit-actions"><button className="primary-button" type="submit">Save</button><button className="secondary-button" id="cancel-budget-edit-btn" type="button">Cancel</button></div></form></article>
             <article className="kpi-card"><div className="kpi-heading"><span>Remaining</span><svg className="kpi-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 8v5l3 2" /></svg></div><strong id="remaining-budget">₦250,000</strong><p id="budget-status">You're on track</p></article>
             <article className="kpi-card"><div className="kpi-heading"><span>Transactions</span><svg className="kpi-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v18H7zM10 7h4M10 11h4M10 15h2" /></svg></div><strong id="transaction-count">0</strong><p id="latest-date">Start your first entry</p></article>
           </section>
@@ -57,7 +58,7 @@ export default function DashboardPage() {
             <article className="panel add-panel" id="expense-entry">
               <div className="panel-header"><div><p className="eyebrow">Quick add</p><h2 id="expense-form-title">Record an expense</h2></div><span className="panel-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></span></div>
               <form id="expense-form" noValidate>
-                <label htmlFor="description">What did you spend on?</label><input type="text" id="description" placeholder="e.g. Weekly groceries" maxLength="60" required />
+                <label htmlFor="description">What did you spend on?</label><input type="text" id="description" placeholder="e.g. Weekly groceries" maxLength={60} required />
                 <div className="form-row"><div><label htmlFor="amount">Amount</label><div className="input-with-symbol"><span>₦</span><input type="number" id="amount" placeholder="0.00" min="0.01" step="0.01" required /></div></div><div><label htmlFor="category">Category</label><select id="category"><option>Food</option><option>Bills</option><option>Transport</option><option>Shopping</option><option>Fun</option><option>Other</option></select></div></div>
                 <div><label htmlFor="expense-date">Date</label><input type="date" id="expense-date" required /><small className="field-hint">Previous years are supported.</small></div>
                 <p className="form-message" id="form-message" role="alert" /><div className="form-actions"><button className="primary-button" id="expense-submit-btn" type="submit">Add expense <span>↗</span></button><button className="secondary-button" id="cancel-edit-btn" type="button" hidden>Cancel</button></div>
@@ -85,7 +86,7 @@ export default function DashboardPage() {
             <article className="panel recurring-panel" id="recurring">
               <div className="panel-header panel-header-wide"><div><p className="eyebrow">Plan ahead</p><h2>Recurring expenses</h2><p className="muted">See in-app reminders when regular bills are due. Nothing is added until you confirm it.</p></div></div>
               <form id="recurring-form" className="recurring-form" noValidate>
-                <div><label htmlFor="recurring-description">Expense</label><input id="recurring-description" type="text" maxLength="60" placeholder="e.g. Internet bill" required /></div>
+                <div><label htmlFor="recurring-description">Expense</label><input id="recurring-description" type="text" maxLength={60} placeholder="e.g. Internet bill" required /></div>
                 <div><label htmlFor="recurring-amount">Amount</label><div className="input-with-symbol"><span>₦</span><input id="recurring-amount" type="number" min="0.01" step="0.01" placeholder="0.00" required /></div></div>
                 <div><label htmlFor="recurring-category">Category</label><select id="recurring-category"><option>Bills</option><option>Food</option><option>Transport</option><option>Shopping</option><option>Fun</option><option>Other</option></select></div>
                 <div><label htmlFor="recurring-frequency">Repeats</label><select id="recurring-frequency"><option value="monthly">Monthly</option><option value="weekly">Weekly</option></select></div>
